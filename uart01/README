@@ -1,0 +1,8 @@
+see top level README for documentation and how to run this program
+
+This is the first example, didnt init the uart because running from
+the bootloader that already has the uart initialized, looks to be a
+16550 (8250) clone so easy to setup anyway.  Dumping the registers
+from uboot shows that the interrupts are not enabled so we dont have
+to disable them or have to worry about uboot getting in our way.
+

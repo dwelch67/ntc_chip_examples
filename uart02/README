@@ -1,0 +1,4 @@
+see top level README for documentation and how to run this program
+
+This second example takes whatever comes in on the uart and echos
+it back out (adding a line feed for each carriage return).

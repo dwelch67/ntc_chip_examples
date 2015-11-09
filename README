@@ -1,0 +1,124 @@
+
+got a couple of these
+
+https://www.kickstarter.com/projects/1598272670/chip-the-worlds-first-9-computer/description
+
+went here for bringup help
+
+https://nextthingco.zendesk.com/hc/en-us/sections/201702957-Getting-Started-with-C-H-I-P-
+
+specifically, note I have the uart1 rx/tx hooked up to an ftdi breakout
+board to watch/use the serial.
+
+https://nextthingco.zendesk.com/hc/en-us/articles/209757858-Flash-C-H-I-P-with-an-OS-Ubuntu-
+
+it has an allwinner A13 on it so googling for docs (this may be a moving
+target)
+
+http://free-electrons.com/~maxime/pub/datasheet/A13%20user%20manual%20v1.2%2020130108.pdf
+
+uart1 base address 0x01C28400 and it is 16550 style so the rx and
+tx registers are at offset zero
+
+so power up and catch uboot with a keypress
+
+then 
+
+sunxi# mw 0x01c28400 0x55                                                       
+Usunxi#
+
+sunxi# mw 0x01c28400 0x56                                                      
+Vsunxi# 
+
+so that causes characters to go out the uart.  
+
+supposedly there is ram at address zero (vs rom)
+
+
+sunxi# md 0 20                                                                  
+00000000: ea000006 4e4f4765 3054422e 2df63554    ....eGON.BT0T5.-               
+00000010: 00006000 00000000 00000000 00000000    .`..............               
+00000020: ea000016 e59ff014 e59ff001 e59ff014    ................               
+00000030: e59ff014 e59ff014 e59ff014 e59ff014    ................               
+00000040: 00000060 00000060 00000060 00000060    `...`...`...`...               
+00000050: 00000060 00000060 00000060 deadbeef    `...`...`.......               
+00000060: ebfffffe e320f000 e320f000 e320f000    ...... ... ... .               
+00000070: e320f000 e320f000 e320f000 e320f000    .. ... ... ... .               
+
+sunxi# mw 0x14 0x12345678                                                       
+sunxi# md 0 20                                                                  
+00000000: ea000006 4e4f4765 3054422e 2df63554    ....eGON.BT0T5.-               
+00000010: 00006000 12345678 00000000 00000000    .`..xV4.........               
+00000020: ea000016 e59ff014 e59ff001 e59ff014    ................               
+00000030: e59ff014 e59ff014 e59ff014 e59ff014    ................               
+00000040: 00000060 00000060 00000060 00000060    `...`...`...`...               
+00000050: 00000060 00000060 00000060 deadbeef    `...`...`.......               
+00000060: ebfffffe e320f000 e320f000 e320f000    ...... ... ... .               
+00000070: e320f000 e320f000 e320f000 e320f000    .. ... ... ... .               
+
+guess so.
+
+and it looks like ddr2/ddr3 is at 0x40000000.  not sure how much if
+the bootloader is using it.  printenv shows
+
+kernel_addr_r=0x42000000
+
+there are other addresses in that space, just not sure yet how much
+room to leave for the bootloader, so will start with 0x42000000
+
+sunxi# md 0x42000000 20                                                         
+42000000: ffffffff ffffffff ffffffff ffffffff    ................               
+42000010: ffffffff ffffffff ffffffff ffffffff    ................               
+42000020: ffffffff ffffffff ffffffff ffffffff    ................               
+42000030: ffffffff ffffffff ffffffff ffffffff    ................               
+42000040: ffffffff ffffffff ffffffff ffffffff    ................               
+42000050: ffffffff ffffffff ffffffff ffffffff    ................               
+42000060: ffffffff ffffffff ffffffff ffffffff    ................               
+42000070: ffffffff ffffffff ffffffff ffffffff    ................               
+sunxi# mw 0x42000000 12345678                                                   
+sunxi# md 0x42000000 20                                                         
+42000000: 12345678 ffffffff ffffffff ffffffff    xV4.............               
+42000010: ffffffff ffffffff ffffffff ffffffff    ................               
+42000020: ffffffff ffffffff ffffffff ffffffff    ................               
+42000030: ffffffff ffffffff ffffffff ffffffff    ................               
+42000040: ffffffff ffffffff ffffffff ffffffff    ................               
+42000050: ffffffff ffffffff ffffffff ffffffff    ................               
+42000060: ffffffff ffffffff ffffffff ffffffff    ................               
+42000070: ffffffff ffffffff ffffffff ffffffff    ................               
+sunxi# 
+
+trying uart01 example
+
+sunxi# loadx 0x42000000                                                                   
+## Ready for binary (xmodem) download to 0x42000000 at 115200 bps...
+{
+minicom ctrl-a then s then down to xmodem, enter a few times then
+type in the path and filename notmain.bin.  teraterm, putty, hyperterm,
+etc?  I dont know, figure it out.  you can use ymodem as well.
+}
+sunxi# go 0x42000000                                                            
+## Starting application at 0x42000000 ...                                       
+12345678                                                                        
+5B22FB98                                                                        
+12345678                                                                        
+
+so the stack pointer was around 400mbytes into ram.
+
+
+note uboot had started up like this
+                                                            
+                                                                                
+U-Boot 2015.07 (Nov 03 2015 - 07:12:54 +0000) Allwinner Technology              
+                                                                                
+CPU:   Allwinner A13 (SUN5I)                                                    
+I2C:   ready                                                                    
+DRAM:  512 MiB                                                                  
+NAND:  8192 MiB                                                                 
+MMC:   SUNXI SD/MMC: 0                    
+
+which is what the kickstarter page said 512MBytes of ram.  although
+this shows 8GB of flash and kickstarter says 4GB.
+
+
+
+
