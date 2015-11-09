@@ -8,7 +8,7 @@ went here for bringup help
 https://nextthingco.zendesk.com/hc/en-us/sections/201702957-Getting-Started-with-C-H-I-P-
 
 specifically, note I have the uart1 rx/tx hooked up to an ftdi breakout
-board to watch/use the serial.
+board to watch/use the serial.  and I didnt need the fel jumper, ymmv
 
 https://nextthingco.zendesk.com/hc/en-us/articles/209757858-Flash-C-H-I-P-with-an-OS-Ubuntu-
 
@@ -119,6 +119,10 @@ MMC:   SUNXI SD/MMC: 0
 which is what the kickstarter page said 512MBytes of ram.  although
 this shows 8GB of flash and kickstarter says 4GB.
 
-
+why didnt I start with an led example?  two reasons generally for
+uboot (or other bootloader like that) there is already a uart ready
+to go, second so far I dont know where the schematic is to see if
+the led is programmable.  also curious to know what the button does
+would have been nice if it were reset.
 
 
