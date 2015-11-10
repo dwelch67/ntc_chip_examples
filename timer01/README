@@ -1,0 +1,8 @@
+see top level README for documentation and how to run this program
+
+Have not figured out how to get the sync timer going, but the async
+is easy and is already running from uboot.  The top 4 bits change
+every 11.25 seconds roughly so that is 2^28 / 11.25 which is around
+24MHz.  The source is OSC24M so that is likely a 24MHz reference.
+
+So roughly every 3 minutes the timer rolls over.
