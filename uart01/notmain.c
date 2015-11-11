@@ -13,6 +13,9 @@ extern unsigned int ID_PFR0 ( void );
 extern unsigned int ID_PFR1 ( void );
 extern unsigned int ID_DFR0 ( void );
 extern unsigned int ID_AFR0 ( void );
+extern unsigned int CPACR ( void );
+extern unsigned int FPSID ( void );
+extern unsigned int ID_ISAR0 ( void );
 
 //-------------------------------------------------------------------------
 int notmain ( unsigned int sp )
@@ -25,6 +28,9 @@ int notmain ( unsigned int sp )
     hexstring(ID_PFR1());
     hexstring(ID_DFR0());
     hexstring(ID_AFR0());
+    hexstring(CPACR());
+    hexstring(ID_ISAR0());
+    hexstring(FPSID());
     hexstring(0x12345678);
     return(0);
 }

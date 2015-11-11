@@ -28,7 +28,7 @@ notmain.o : notmain.c
 	$(ARMGNU)-gcc $(COPS) -c notmain.c -o notmain.o
 
 novectors.o : novectors.s
-	$(ARMGNU)-as novectors.s -o novectors.o
+	$(ARMGNU)-as novectors.s -march=armv7a -mfpu=vfp -o novectors.o
 
 uart.o : uart.c
 	$(ARMGNU)-gcc $(COPS) -c uart.c -o uart.o
