@@ -17,6 +17,12 @@ target)
 
 http://free-electrons.com/~maxime/pub/datasheet/A13%20user%20manual%20v1.2%2020130108.pdf
 
+You may also want to get the ARMv7AR Architectural Reference Manual
+
+http://infocenter.arm.com
+
+From the A13 manual
+
 uart1 base address 0x01C28400 and it is 16550 style so the rx and
 tx registers are at offset zero
 
@@ -119,12 +125,114 @@ MMC:   SUNXI SD/MMC: 0
 which is what the kickstarter page said 512MBytes of ram.  although
 this shows 8GB of flash and kickstarter says 4GB.
 
-why didnt I start with an led example?  two reasons generally for
+Why didnt I start with an led example?  Two reasons generally for
 uboot (or other bootloader like that) there is already a uart ready
-to go, second so far I dont know where the schematic is to see if
-the led is programmable.  also curious to know what the button does
-would have been nice if it were reset.
+to go.  Second, well originally, I didnt know where to find the
+schematic.  I have since found the schematics.
 
-LEDs are incredibly painful, instant migraine...going to see if I can
-remove/replace them. Or maybe use nail polish or paint or something
-to cover them up.
+git clone https://github.com/NextThingCo/CHIP-Hardware.git
+
+There is an AXP209 http://linux-sunxi.org/AXP209 which has the GPIO
+talked about in the NTC forums and that is where the reset button
+is connected.  So to use either of those need to deal with how
+to talk to that chip.  Maybe later.  I do know now that if you hold
+the reset button like you would a power button on a hung computer
+after several seconds it powers off.  But then even if you unplug
+the usb and plug it back in (or maybe I didnt wait long enough) you
+have to hold it for a shorter amount of time.  Basically for bare metal
+you can use that button and not keep unplugging and plugging the usb.
+
+The LEDs on the board are incredibly painful, instant migraine...I
+was able to remove them without too much trouble (average soldering
+skills, add new solder to each side, get a good blob on there, then
+you can put the iron so it touches both blobs and CAREFULLY slide
+the led off without pulling up the pads.  Yes you destroy the led
+this way).  Could probably put a dab of nail polish or paint on them
+if you get headaches from leds like this.
+
+So that you dont have to hit enter within 3 seconds, assuming you
+are like me and only interested in bare metal.
+
+sunxi# setenv bootcmd loadx
+sunxi# saveenv
+
+loadx by default starts with 0x42000000 the address we guessed at above
+
+when looking at the component side of the board, with the usb up the
+connector on the right
+
+1 GND
+3 UART1-TX
+5 UART1-RX
+7 FEL
+
+So again this is a uboot based board so uboot has already setup many
+things including the uart, so you dont really need to start with
+a blinker program.  The stuff above showed using uboot commands to
+poke at the uart output, from there you just dive into your first
+uart program (uart01).
+
+I did make an led blinker blinker01, and that demonstrates that we
+probably have a bunch of GPIO (all of the LCD ones at least) to play
+with if we want as well as the special function ones spi, etc (LCD
+is a special function one too).  Having the uart right off though
+kind of eliminates the need for too much led based things and not
+everyone has an led, of course not everyone has a uart breakout
+board.
+
+this is my go-to ftdi board, I have a number of them and use them
+for everything.
+
+https://www.sparkfun.com/products/retired/718
+
+You need a 3.3V one for most boards NOT the 5V one you might have for
+some arduino or avr boards.  Basically the ones you might use for a
+raspberry pi.
+
+You can use one of these
+
+https://www.sparkfun.com/products/9873
+
+I have/use these for everything
+
+https://www.sparkfun.com/products/10898
+
+For this board you might need one male end
+
+https://www.sparkfun.com/products/9139
+
+or both
+
+https://www.sparkfun.com/products/10897
+
+a male male will take you between a female ftdi breakout or something
+like this
+
+http://www.adafruit.com/products/954
+
+I have some of these too, but am able to solder and change it to a
+3.3v board
+
+http://jim.sh/ftx/
+
+Been playing with making small breakout boards lately so maybe I will
+just make my own ftdi breakout...will see...
+
+Kinda funny if they really get this board down to $9, these debug things
+are going to cost more than the price of the board depending on where
+you get them.  You can get other similar breakouts and cables on ebay
+from asia for a lot less but sometimes you have to wait weeks.  And
+there is a risk it doesnt work or is not documented.
+
+Have a couple of these or ones like them I think I got mine much cheaper
+but maybe paid $2 for shipping.
+
+http://www.ebay.com/itm/New-version-smaller-micro-FTDI-Basic-Breakout-5V-3-3V-Adjustable-Micro-USB-/231009872096?hash=item35c942e8e0:g:ImQAAOxyg6BR0n1a
+
+For bare metal work you need some serial solutions.  These days you
+usually dont need RS232 level solutions, these 3.3V solutions cover 99%
+and then occasionally a 5V and I have 1.8V board.  You wont get too
+far without one/some serial interface solutions in your toolbox.  And
+you wont get far at all with these bare metal examples without one. At
+least no soldering is required for most of these examples if you use
+jumper wires.

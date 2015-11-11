@@ -1,0 +1,27 @@
+see top level README for documentation and how to run this program
+
+So I did a blinker example after all.
+
+I have some of these with pins soldered on
+
+https://www.sparkfun.com/products/10081
+
+any led will do, you probably want a resistor to be safe but I have been
+known to just take good old fashioned leds
+
+https://www.sparkfun.com/products/12062
+
+and shove them into pins.  you do take the risk of letting smoke out
+the part.  and you have to get the orientation right for it to light
+up (there are gnd and 3v3 pins to check with before going from gnd
+to the I/O pin).
+
+I guessed/assumed that the LCD pins were not being used.  All of port
+D that they at least list PD2 to PD27 are LCD related which I am not
+using right now, and despite the chip docs saying there are 8 gpios
+that is likely when running linux, the A13 docs show zillions of gpios
+7 ports worth.  So anyway picked LCD_D2 or PD2.  Configured it as a
+simple output.  Used the timer from timer01, count to 24 million which
+is one second, change the state of the output.  not using any of the
+other Port D pins so I can just bang on the PD_OUT.  And the led
+blinks.
