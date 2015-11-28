@@ -12,16 +12,18 @@ board to watch/use the serial.  Needed the fel jumper.
 
 https://nextthingco.zendesk.com/hc/en-us/articles/209757858-Flash-C-H-I-P-with-an-OS-Ubuntu-
 
-it has an allwinner A13 on it so googling for docs (this may be a moving
-target)
+it has an allwinner A13 on it
 
-http://free-electrons.com/~maxime/pub/datasheet/A13%20user%20manual%20v1.2%2020130108.pdf
+git clone https://github.com/NextThingCo/CHIP-Hardware.git
+
+And in the Datasheets directory are a number of pdfs including an
+Alwinner User Manual.
 
 You may also want to get the ARMv7AR Architectural Reference Manual
 
 http://infocenter.arm.com
 
-From the A13 manual
+From the Allwinner manual
 
 uart1 base address 0x01C28400 and it is 16550 style so the rx and
 tx registers are at offset zero
@@ -218,11 +220,9 @@ http://jim.sh/ftx/
 Been playing with making small breakout boards lately so maybe I will
 just make my own ftdi breakout...will see...
 
-Kinda funny if they really get this board down to $9, these debug things
-are going to cost more than the price of the board depending on where
-you get them.  You can get other similar breakouts and cables on ebay
-from asia for a lot less but sometimes you have to wait weeks.  And
-there is a risk it doesnt work or is not documented.
+You can get other similar breakouts and cables on ebay from asia for a
+lot less but sometimes you have to wait weeks.  And there is a risk it
+doesnt work or is not documented.
 
 Have a couple of these or ones like them I think I got mine much cheaper
 but maybe paid $2 for shipping.
@@ -230,9 +230,10 @@ but maybe paid $2 for shipping.
 http://www.ebay.com/itm/New-version-smaller-micro-FTDI-Basic-Breakout-5V-3-3V-Adjustable-Micro-USB-/231009872096?hash=item35c942e8e0:g:ImQAAOxyg6BR0n1a
 
 For bare metal work you need some serial solutions.  These days you
-usually dont need RS232 level solutions, these 3.3V solutions cover 99%
-and then occasionally a 5V and I have 1.8V board.  You wont get too
-far without one/some serial interface solutions in your toolbox.  And
-you wont get far at all with these bare metal examples without one. At
-least no soldering is required for most of these examples if you use
-jumper wires.
+usually dont need RS232 level solutions, RS232 is a voltage definition
+NOT a protocol, RS232 voltages will fry a board like this.  These 3.3V
+solutions cover 99% and then occasionally a 5V and I have 1.8V board.
+You wont get too far without one/some serial interface solutions in
+your toolbox.  And you wont get far at all with these bare metal
+examples without one. At least no soldering is required for most of
+these examples if you use jumper wires.
