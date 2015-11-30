@@ -1,0 +1,25 @@
+see top level README for documentation and how to run this program
+
+This is how you enable the floating point unit.  And some very
+simple examples (in assembly).
+
+read the float01 description, and come back
+
+so not only does this line work right
+
+    hexstring(ftoi(1234.0F/fdummy(1.20F)));
+
+we can get the compiler to do the float to int conversion as well as
+the division.
+
+    hexstring(1234.0F/fdummy(1.20F));
+
+420001f4:   eeb00a68    vmov.f32    s0, s17
+420001f8:   ebffff93    bl  4200004c <fdummy>
+420001fc:   ee880a00    vdiv.f32    s0, s16, s0
+42000200:   eebc0ac0    vcvt.u32.f32    s0, s0
+42000204:   ee100a10    vmov    r0, s0
+42000208:   ebffffc9    bl  42000134 <hexstring>
+
+I imagine there will be situations where you get gcclib function
+calls and you just have to deal with that.

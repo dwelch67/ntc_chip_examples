@@ -1,0 +1,198 @@
+see top level README for documentation and how to run this program
+
+This is how you enable the floating point unit.  And some very
+simple examples (in assembly).
+
+
+Here is some magic that is most definitely not obvious, but required
+to enable the floating point unit(s).
+
+    ;@ enable fpu
+    mrc p15, 0, r0, c1, c0, 2
+    orr r0,r0,#0x300000 ;@ single precision
+    orr r0,r0,#0xC00000 ;@ double precision
+    mcr p15, 0, r0, c1, c0, 2
+    mov r0,#0x40000000
+    ;@fmxr fpexc,r0
+    vmsr fpexc, r0
+
+In the ARM Architectural Reference Manual we see
+
+VMSA CP15 c1 register summary, system control registers
+
+for c1 - 0 - c1 - 2 we see
+
+CPACR, Coprocessor Access Control Register
+
+we are setting a 0b11 for cp10 and cp11
+
+0b11 means Full access to each of those coprocessors
+
+Elsewhere in the document we see
+
+Coprocessors 10 and 11 (CP10 and CP11) together support floating-point
+and vector operations, and the control and configuration of the
+Floating-point and Advanced SIMD architecture extensions.
+
+We also see a note
+
+In an implementation that includes either or both of the Advanced SIMD
+Extension and the Floating-point (VFP) Extension, to permit execution
+of any floating-point or Advanced SIMD instructions, software must
+enable access to both CP10 and CP11, see Enabling Advanced SIMD and
+floating-point support on page ...
+
+And under that section it basically tells us we need to change
+the bits from 0b00 to something else.  0b11 is full access so why not?
+
+Note it also says
+
+In addition, FPEXC.EN is an enable bit for most Advanced SIMD and
+Floating-point operations. When FPEXC.EN is 0, all Advanced SIMD and
+Floating-point instructions are treated as UNDEFINED except for:
+
+That is bit 31 in the FPEXC register which can be written from a
+general purpose register (r0 in this case), using the old or new
+syntax
+
+    fmxr fpexc,r0
+    vmsr fpexc, r0
+
+Both encode the same instruction
+
+42000024:   eee80a10    vmsr    fpexc, r0
+
+In case you are curious you can look at the instruction set encoding
+
+Coprocessor instructions, and Supervisor Call
+
+To see that an instruction with the encoding
+
+10987654321098765432109876543210
+xxxx11xxxxxxxxxxxxxxxxxxxxxxxxxx
+
+Is one of these instructions.  The instruction above is
+
+10987654321098765432109876543210
+11101110111010000000101000010000
+
+op1 = 0b101110 and op is 1
+
+10xxx0 1 is a move to coprocessor rom arm core register.
+
+And so on, so all of the floating point instructions will fit in
+this instruction encoding.  And you can figure out which bits control
+which operation, etc.
+
+Moving on...
+
+So this example is written to be used with these options
+
+MSTUFF = -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=soft
+
+I kinda happen to know that IEEE754 single precision for
+1.0 is the binary pattern 0x3F800000.
+
+.globl ifdummy
+ifdummy:
+    bx lr
+
+Simply convinces the compiler that I have a function called
+ifdummy that accepts a float and outputs an unsigned int.  Since
+I know that the compiler is using soft float it is putting operands
+in the general purpose fixed point registers
+
+42000184:   e3a005fe    mov r0, #1065353216 ; 0x3f800000
+42000188:   ebffffb0    bl  42000050 <ifdummy>
+42000190:   ebffffee    bl  42000150 <hexstring>
+
+So r0 in and r0 out basically.  I can use ifdummy as a type
+conversion for the compiler.
+
+So uncomment this line
+
+    hexstring(ftoi(1234.0F/fdummy(1.20F)));
+
+and make
+
+notmain.c:(.text+0x98): undefined reference to `__aeabi_fdiv'
+
+Soft float means that there is a gcc library that implements the
+floating point operations.  The compiler prepares the operands
+and makes a call to the library function for that operation, in this
+case a single precision floating point division.
+
+We dont actually want to use the soft floating point library but
+that is how gcc defaults for the ARM, and that is where I started
+with this.  Note gcc does the same thing with fixed point operations
+sometimes as well, if it doesnt think your instruction set can properly
+support the operation.  Short answer ld does not know from where it
+comes, and cannot then make a relative path to the gcclib.  GCC though
+does know where it was spawned from and can create a path within
+the toolchain tree, and feed that to ld when gcc spawns ld.  So if you
+get into this situation fixed or float and want to use gcclib then
+you either hardcode the path to gcclib on the ld command line or use
+gcc to link (ewwww gross).
+
+For this example I wrote a few floating point library calls to avoid
+the above problem.
+
+They start off by basically copying the bits from the general purpose
+registers to the FPU registers, the does the operation, then copies the
+result back to a GPR.
+
+.globl vdiv
+vdiv:
+    vmov s0,r0
+    vmov s1,r1
+    vdiv.f32 s2,s0,s1
+    vmov r0,s2
+    bx lr
+
+So you ask, why does this line not have the gcclib problem?
+
+    hexstring(ftoi(1234.0F/1.20F));
+
+Simple, the optimizer computes the result and simply feeds it to
+ftoi.  It is computed compile time not run time.
+
+420001f8:   e3080aaa    movw    r0, #35498  ; 0x8aaa
+420001fc:   e3440480    movt    r0, #17536  ; 0x4480
+42000200:   ebffff9d    bl  4200007c <ftoi>
+42000204:   ebffffd1    bl  42000150 <hexstring>
+
+The fdummy() function call in this line
+
+    hexstring(ftoi(1234.0F/fdummy(1.20F)));
+
+is external to this code, so the compiler does not know what this
+external code does so it must generate runtime code.  A simple
+trick to keep compilers from doing such things for cases like these
+where you want to demonstrate something runtime and not let the
+optimizer get in the way.
+
+If you use hard float
+
+MSTUFF = -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=hard
+
+then the offending line does not generate an error.  But we have
+hard float encoded code, it doesnt call soft float library functions
+it generates floating point code, and floating point function calls
+want floating poing registers for operands not fixed point.
+
+42000180:   ed9f8a25    vldr    s16, [pc, #148] ; 4200021c <notmain+0xb0>
+42000190:   eddf8a22    vldr    s17, [pc, #136] ; 42000220 <notmain+0xb4>
+
+420001c8:   eef00a68    vmov.f32    s1, s17
+420001cc:   eeb00a48    vmov.f32    s0, s16
+420001d0:   ebffffa4    bl  42000068 <vdiv>
+420001d4:   ebffff9d    bl  42000050 <ifdummy>
+420001d8:   ebffffdc    bl  42000150 <hexstring>
+
+4200021c:   449a4000
+42000220:   3f99999a
+
+So float02 will be this example but for hard float
+
+
+
