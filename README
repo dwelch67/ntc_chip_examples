@@ -3,25 +3,38 @@ got a couple of these
 
 https://www.kickstarter.com/projects/1598272670/chip-the-worlds-first-9-computer/description
 
+Their docs seem to be a moving target, changed since I first wrote this
+
 went here for bringup help
 
-https://nextthingco.zendesk.com/hc/en-us/sections/201702957-Getting-Started-with-C-H-I-P-
+http://docs.getchip.com
 
-specifically, note I have the uart1 rx/tx hooked up to an ftdi breakout
-board to watch/use the serial.  Needed the fel jumper.
+Under Advanced there is a Setup Ubuntu For Flashing
 
-https://nextthingco.zendesk.com/hc/en-us/articles/209757858-Flash-C-H-I-P-with-an-OS-Ubuntu-
+Then under CHIP Hardware it shows where to connect a 3.3V level uart,
+see below for ideas to connect to this.
 
-it has an allwinner A13 on it
+Then under Advanced see Flash CHIP Firmware
+
+The uart is not required for this step it uses the usb with the fel
+tool which looks VERY interesting, going to see if I cant use that
+tool to load/run stuff rather than through u-boot.
+
+Part of the setup for ubuntu you get this repo
+
+git clone https://github.com/linux-sunxi/sunxi-tools
+
+For documentation get this repo
 
 git clone https://github.com/NextThingCo/CHIP-Hardware.git
-
-And in the Datasheets directory are a number of pdfs including an
-Alwinner User Manual.
 
 You may also want to get the ARMv7AR Architectural Reference Manual
 
 http://infocenter.arm.com
+
+And the technical reference manual for a cortex-A8 but I dont know
+what rev, sometimes minor and/or major revs make a big difference with
+the ARM TRM docs, will have to just wing it.
 
 From the Allwinner manual
 
@@ -129,10 +142,7 @@ this shows 8GB of flash and kickstarter says 4GB.
 
 Why didnt I start with an led example?  Two reasons generally for
 uboot (or other bootloader like that) there is already a uart ready
-to go.  Second, well originally, I didnt know where to find the
-schematic.  I have since found the schematics.
-
-git clone https://github.com/NextThingCo/CHIP-Hardware.git
+to go.  The CHIP-Hardware repo has schematics
 
 There is an AXP209 http://linux-sunxi.org/AXP209 which has the GPIO
 talked about in the NTC forums and that is where the reset button
@@ -182,6 +192,19 @@ kind of eliminates the need for too much led based things and not
 everyone has an led, of course not everyone has a uart breakout
 board.
 
+I recommend a header like this
+
+mouser part number 872-920-0102-01
+
+They are exactly twice too long, you can figure out other ways to
+break them at the right length but you can plug one in to the CHIP
+let the other half hang off the end, gives it the stiffness to break
+at the right place, then plug that row in.  Repeat for the other side.
+
+This means you can use female/female jumpers (assuming your uart
+solution has female on them or maybe repeat the process with more of
+these jumpers).
+
 this is my go-to ftdi board, I have a number of them and use them
 for everything.
 
@@ -212,13 +235,10 @@ like this
 
 http://www.adafruit.com/products/954
 
-I have some of these too, but am able to solder and change it to a
+I have some of these too, but am able to solder pins and change it to a
 3.3v board
 
 http://jim.sh/ftx/
-
-Been playing with making small breakout boards lately so maybe I will
-just make my own ftdi breakout...will see...
 
 You can get other similar breakouts and cables on ebay from asia for a
 lot less but sometimes you have to wait weeks.  And there is a risk it
@@ -230,10 +250,89 @@ but maybe paid $2 for shipping.
 http://www.ebay.com/itm/New-version-smaller-micro-FTDI-Basic-Breakout-5V-3-3V-Adjustable-Micro-USB-/231009872096?hash=item35c942e8e0:g:ImQAAOxyg6BR0n1a
 
 For bare metal work you need some serial solutions.  These days you
-usually dont need RS232 level solutions, RS232 is a voltage definition
-NOT a protocol, RS232 voltages will fry a board like this.  These 3.3V
-solutions cover 99% and then occasionally a 5V and I have 1.8V board.
-You wont get too far without one/some serial interface solutions in
-your toolbox.  And you wont get far at all with these bare metal
-examples without one. At least no soldering is required for most of
-these examples if you use jumper wires.
+usually dont need RS232 level solutions, RS232C is a voltage definition
+NOT a protocol (extremely common mistake), RS232 voltages will fry a
+board like this.  These 3.3V solutions cover 99% and then occasionally
+a 5V and I have 1.8V board.  You wont get too far without one/some
+serial interface solutions in your toolbox.  And you wont get far at all
+with these bare metal examples without one. At least no soldering is
+required for most of these examples if you use jumper wires.
+
+
+ARM toolchain options
+
+if you have ubuntu or a derivative (mint) you can
+
+apt-get install gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi
+
+for linux, windows or mac try this one
+
+https://launchpad.net/gcc-arm-embedded
+
+or
+
+you can use my build_gcc repo to build an arm toolchain from sources
+(linux but could be made to build on windows or mac if you do the
+work)
+
+Might need to change the ARMGNU definition in my makefiles or change
+it in your environment to override.
+
+export ARMGNU=arm-none-eabi
+
+
+
+When updating the firmware after running this
+
+  cd ~/CHIP-tools
+  ./chip-update-firmware.sh
+
+the CHIP-tools directory has a .firmware directory with the files that
+were written to the board.  it appears that the spl program assists
+fel in doing things, it is loaded and runs in ram, spits out some
+ascii on the uart when run
+
+fel spl .firmware/images/sunxi-spl.bin
+
+and on the uart terminal
+
+U-Boot SPL 2015.10 (Dec 22 2015 - 20:46:00)
+DRAM: 512 MiB
+CPU: 1008000000Hz, AXI/AHB/APB: 3/2/2
+
+Okay so first I messed around with the spl header, got a blinker01 to
+work from SRAM (address 0x00000000 is where the spl is being loaded).
+But, should have tried this first, and prefer it.  I have left the
+spl binary for you.
+
+Unplug and replug the usb to power cycle the board.  Jumper the
+FEL pin to GND  I use the pin 1 GND on that connector not the one they
+use in their picture.
+
+fel spl sunxi-spl.bin
+
+if you have the uart up you will see
+
+U-Boot SPL 2015.10 (Dec 22 2015 - 20:46:00)
+DRAM: 512 MiB
+CPU: 1008000000Hz, AXI/AHB/APB: 3/2/2
+
+then
+
+fel write 0x42000000 blinker01/notmain.bin
+fel exe 0x42000000
+
+and it runs as well as if we had run through uboot.
+
+If you look at the CHIP-tools scripts you will see them running uboot
+this way.  Just needed to make the connection that the spl program
+was assisting in this.
+
+Basically one of my boards is bricked already it doesnt want to boot
+uboot completely, has some checksum failures perhaps flash has gone
+bad.  So while trying to recover it with these tools, I looked closer
+at these tools.  I might write the N.T.C folks about the board not
+booting.  I have a few more coming eventually so maybe this becomes a
+trophy or paperweight as I think the post-alphas one/some chips moved.
+
+Hmm, interesting, both of my boards are bricked...
