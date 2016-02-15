@@ -1,0 +1,17 @@
+see top level README for documentation and how to run this program
+
+Playing around.  At the moment we are in supervisor mode, both if launched
+via spl or from uboot.  (The raspberry pi for example is now booting into
+hypervisor mode before handing off to us.
+
+Also did a quick memory check.  It appears we can write and read 0x0000
+to 0xC000 which I assume is on chip SRAM.  Then dram is from 0x40000000
+to 0x60000000 (512MB) in theory but that didnt work so I scaled it back
+to test the first 256MB and that does work.  Very quick and dirty testing
+thus far, little research, maybe the gpu uses this ram or something.
+
+in fel mode use make run to load and run.  or in uboot loadx/y to 0x4000
+then go 0x4000.
+
+
+
