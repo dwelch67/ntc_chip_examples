@@ -36,10 +36,6 @@ uart.o : uart.c
 notmain.bin : memmap novectors.o uart.o notmain.o 
 	$(ARMGNU)-ld novectors.o uart.o notmain.o -T memmap -o notmain.elf
 	$(ARMGNU)-objdump -D notmain.elf > notmain.list
+	$(ARMGNU)-objcopy --srec-forceS3 notmain.elf -O srec notmain.srec
 	$(ARMGNU)-objcopy notmain.elf -O binary notmain.bin 
-
-run : notmain.bin
-	fel spl ../sunxi-spl.bin
-	fel write 0x4000 notmain.bin
-	fel exe 0x4000
 

@@ -6,7 +6,6 @@ ARMGNU ?= arm-linux-gnueabi
 
 COPS = -Wall -O2 -nostdlib -nostartfiles -ffreestanding 
 
-
 all : notmain.bin
 
 clean :
@@ -23,7 +22,6 @@ clean :
 	rm -f notmain
 
 
-
 notmain.o : notmain.c
 	$(ARMGNU)-gcc $(COPS) -c notmain.c -o notmain.o
 
@@ -36,6 +34,7 @@ uart.o : uart.c
 notmain.bin : memmap novectors.o uart.o notmain.o 
 	$(ARMGNU)-ld novectors.o uart.o notmain.o -T memmap -o notmain.elf
 	$(ARMGNU)-objdump -D notmain.elf > notmain.list
+	$(ARMGNU)-objcopy --srec-forceS3 notmain.elf -O srec notmain.srec
 	$(ARMGNU)-objcopy notmain.elf -O binary notmain.bin 
 
 
