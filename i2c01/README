@@ -1,0 +1,25 @@
+see top level README for documentation and how to run this program
+
+Looking at the schematic we see the APX209 is connected via i2c to
+PB0 (sck) and PB1 (sda).   Using this we can bit bang a simple i2c
+routine to see who acks on the addresses, and find any devices out
+there.  I also hand tuned the i2c_delay(), it actually could be an
+empty function, the code is slow enough as is, but I left some counts
+in there just in case.
+
+I only found one device at address 0x34.
+
+Dumping some registers it does appear to be the APX209.  So then
+investigated things like how long to hold the power button, and
+a bit that just forces power off.  Which works, if you assert that
+bit then you can tell it turned it off, both by the leds if you still
+have them (I removed mine immediately, migraine producing), and by
+the fact no more uart activity.  If you dont set that bit then the
+rest of the program runs.
+
+From the schematic we see that there is an led tied to GPIO2 on the
+APX209.  Which is pretty easy to control, blinker02 is derived from what
+was figured out here.
+
+Again this is a crude bit bang i2c.  These pins also can be used with
+a hardware i2c peripheral which is a future experiment.
