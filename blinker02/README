@@ -1,0 +1,16 @@
+see top level README for documentation and how to run this program
+
+So I did a blinker example after all, using the on board led.
+
+Started with the i2c01 example.  Figured out the address for the APX209
+was 0x34, and that with bit banging I didnt need much if any delay.
+
+Register 0x93 controls GPIO2 which controls one of the leds (the other
+may be hardwired to power, have to check).  The default setting is
+0x07 for that register which is floating, so the circuit outside
+can pull the led on.  If we write a 0 it pulls it low which turns off
+the led.
+
+This example will blink the led and write a character to the uart every
+second.
+
