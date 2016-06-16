@@ -28,7 +28,7 @@ For documentation get this repo
 
 git clone https://github.com/NextThingCo/CHIP-Hardware.git
 
-You may also want to get the ARMv7AR Architectural Reference Manual
+You may also want to get the ARMv7-AR Architectural Reference Manual
 
 http://infocenter.arm.com
 
@@ -137,22 +137,26 @@ DRAM:  512 MiB
 NAND:  8192 MiB
 MMC:   SUNXI SD/MMC: 0
 
-which is what the kickstarter page said 512MBytes of ram.  although
+Which is what the kickstarter page said 512MBytes of ram.  Although
 this shows 8GB of flash and kickstarter says 4GB.
 
 Why didnt I start with an led example?  Two reasons generally for
 uboot (or other bootloader like that) there is already a uart ready
-to go.  The CHIP-Hardware repo has schematics
-
-There is an AXP209 http://linux-sunxi.org/AXP209 which has the GPIO
-talked about in the NTC forums and that is where the reset button
-is connected.  So to use either of those need to deal with how
-to talk to that chip.  Maybe later.  I do know now that if you hold
-the reset button like you would a power button on a hung computer
-after several seconds it powers off.  But then even if you unplug
-the usb and plug it back in (or maybe I didnt wait long enough) you
-have to hold it for a shorter amount of time.  Basically for bare metal
-you can use that button and not keep unplugging and plugging the usb.
+to go.  Second, the CHIP-Hardware repo has schematics and in there
+is an AXP209 (docs also in the CHIP-Hardware repo) which show an led
+tied to GPIO2 of the AXP209.  I have recently bit banged i2c to talk
+to this and am now blinking that led.  Normally when you do the
+equivalent of a hello world in bare metal (blink an led), you are
+trying for a few lines of code to init the gpio and then just turn it
+on or off, and then blink it.  This took more work than that to get
+at the interface, and since we already have a u-boot with the uart
+initialized and ready to use, and the ablity to run programs, the
+hello world for this board is poking characters out the uart not
+blinking an led.   Blinker01 is a bang on a gpio, but you need your
+own gpio and resistor.  Blinker02 toggles one of the on board
+leds as well as pokes bytes out the uart.  Also since on the topic
+of AXP209 i2c01 pokes at some registers, and you can set a bit in
+one of them and turn the board off.
 
 The LEDs on the board are incredibly painful, instant migraine...I
 was able to remove them without too much trouble (average soldering
@@ -160,15 +164,19 @@ skills, add new solder to each side, get a good blob on there, then
 you can put the iron so it touches both blobs and CAREFULLY slide
 the led off without pulling up the pads.  Yes you destroy the led
 this way).  Could probably put a dab of nail polish or paint on them
-if you get headaches from leds like this.
+if you get headaches from leds like this.  And then for the blinker02
+example I put a very low mcd led back on, and that is what I am blinking
+without the headaches.
+
 
 So that you dont have to hit enter within 3 seconds, assuming you
 are like me and only interested in bare metal.
 
-sunxi# setenv bootcmd loadx
+sunxi# setenv bootcmd loads
 sunxi# saveenv
 
-loadx by default starts with 0x42000000 the address we guessed at above
+I now like to use srecord files instead of xmodem downloading of
+binaries.
 
 when looking at the component side of the board, with the usb up the
 connector on the right
@@ -178,19 +186,15 @@ connector on the right
 5 UART1-RX
 7 FEL
 
+The alpha boards didnt have text on the connectors, the current boards
+do so you can see these written on the connector. (at least the gnd,
+tx and rx)
+
 So again this is a uboot based board so uboot has already setup many
 things including the uart, so you dont really need to start with
 a blinker program.  The stuff above showed using uboot commands to
 poke at the uart output, from there you just dive into your first
 uart program (uart01).
-
-I did make an led blinker blinker01, and that demonstrates that we
-probably have a bunch of GPIO (all of the LCD ones at least) to play
-with if we want as well as the special function ones spi, etc (LCD
-is a special function one too).  Having the uart right off though
-kind of eliminates the need for too much led based things and not
-everyone has an led, of course not everyone has a uart breakout
-board.
 
 I recommend a header like this
 
@@ -200,12 +204,16 @@ They are exactly twice too long, you can figure out other ways to
 break them at the right length but you can plug one in to the CHIP
 let the other half hang off the end, gives it the stiffness to break
 at the right place, then plug that row in.  Repeat for the other side.
+(worked great some of the time, and at least once, didnt quite break
+right).
 
 This means you can use female/female jumpers (assuming your uart
 solution has female on them or maybe repeat the process with more of
-these jumpers).
+these jumpers).  I prefer only having female to female jumpers and
+not having to sort through M/M, M/F, F/F to find the ones for
+a particular situation.
 
-this is my go-to ftdi board, I have a number of them and use them
+This is my go-to ftdi board, I have a number of them and use them
 for everything.
 
 https://www.sparkfun.com/products/retired/718
@@ -250,14 +258,14 @@ but maybe paid $2 for shipping.
 http://www.ebay.com/itm/New-version-smaller-micro-FTDI-Basic-Breakout-5V-3-3V-Adjustable-Micro-USB-/231009872096?hash=item35c942e8e0:g:ImQAAOxyg6BR0n1a
 
 For bare metal work you need some serial solutions.  These days you
-usually dont need RS232 level solutions, RS232C is a voltage definition
-NOT a protocol (extremely common mistake), RS232 voltages will fry a
-board like this.  These 3.3V solutions cover 99% and then occasionally
-a 5V and I have 1.8V board.  You wont get too far without one/some
-serial interface solutions in your toolbox.  And you wont get far at all
-with these bare metal examples without one. At least no soldering is
-required for most of these examples if you use jumper wires.
-
+usually dont need RS232 level solutions, RS232C is a voltage (and pin)
+definition NOT a protocol (extremely common mistake), RS232 voltages
+will fry a board like this.  These 3.3V solutions cover 99% and then
+occasionally a 5V and I have 1.8V board.  You wont get too far without
+one/some serial interface solutions in your toolbox.  And you wont get
+far at all with these bare metal examples without one. At least no
+soldering is required for most of these examples if you use jumper
+wires.
 
 ARM toolchain options
 
@@ -282,13 +290,14 @@ export ARMGNU=arm-none-eabi
 
 
 
+
 When updating the firmware after running this
 
   cd ~/CHIP-tools
   ./chip-update-firmware.sh
 
-the CHIP-tools directory has a .firmware directory with the files that
-were written to the board.  it appears that the spl program assists
+The CHIP-tools directory has a .firmware directory with the files that
+were written to the board.  It appears that the spl program assists
 fel in doing things, it is loaded and runs in ram, spits out some
 ascii on the uart when run
 
@@ -331,8 +340,123 @@ was assisting in this.
 Basically one of my boards is bricked already it doesnt want to boot
 uboot completely, has some checksum failures perhaps flash has gone
 bad.  So while trying to recover it with these tools, I looked closer
-at these tools.  I might write the N.T.C folks about the board not
+at these tools.  I might write the NTC folks about the board not
 booting.  I have a few more coming eventually so maybe this becomes a
 trophy or paperweight as I think the post-alphas one/some chips moved.
 
-Hmm, interesting, both of my boards are bricked...
+If I modify fel to show the command line, I do a firmware update with
+-f for fastboot
+
+== upload the SPL to SRAM and execute it ==
+waiting for fel...OK
+[fel][spl][/somewhere/Desktop/C.H.I.P/CHIP-tools/.firmware/images/sunxi-spl.bin]
+== upload spl ==
+[fel][write][0x43000000][/somewhere/Desktop/C.H.I.P/CHIP-tools/.firmware/images/sunxi-spl-with-ecc.bin]
+== upload u-boot ==
+[fel][write][0x4a000000][/tmp/chipflashBLM85O/padded-uboot]
+== upload u-boot script ==
+[fel][write][0x43100000][/tmp/chipflashBLM85O/uboot.scr]
+== execute the main u-boot binary ==
+[fel][exe][0x4a000000]
+== creating sparse image ==
+== waiting for fastboot ==
+
+with this broken-ness it doesnt actually do the fastboot thing right
+and when it does the writing of uboot to flash fails anyway.
+
+But if I ctrl-c while the host script is waiting for fastboot (there
+is a uboot and a script downloaded, it is waiting for that to run)
+
+Then the /tmp/ files remain on the host computer.
+
+And you can do something like get the files from the appropriate
+places
+
+fel spl sunxi-spl.bin
+fel write 0x43000000 sunxi-spl-with-ecc.bin
+fel write 0x4A000000 padded-uboot
+fel write 0x42000000 uart01/notmain.bin
+fel exe 0x4A000000
+
+Then on the console hit a key to stop uboot from auto booting
+
+on the uboot command line
+
+nand erase 0x0 0x200000000
+
+yeah, it is okay if you power cycled now you can still get into the
+chip with fel jumper and repeat the above.
+
+after the erase then do this
+
+nand write.raw.noverify 0x43000000 0x0 0x000000c4
+nand write.raw.noverify 0x43000000 0x400000 0x000000c4
+
+Which appears to write the spl thing to flash, which I guess is where
+ddr init is really happening?  And likely this is some sort of
+pre-bootloader.
+
+ls -al notmain.bin
+-rwxr-xr-x 1 root root 464 Jan 13 22:40 notmain.bin
+
+nand write 0x42000000 0x800000 0x1000
+
+which is well more than enough.
+
+if you then unplug fel, hold the reset 10 seconds, then release and
+hold it again for many seconds.  then it boots
+
+U-Boot SPL 2015.10 (Dec 22 2015 - 20:46:00)
+DRAM: 512 MiB
+CPU: 1008000000Hz, AXI/AHB/APB: 3/2/2
+12345678
+40000000
+413FC082
+00001131
+00000011
+00000400
+00000000
+00F00000
+00101111
+410330C3
+12345678
+
+and runs our program.  that program does not have a uart init really
+since the spl code has already configured the uart.  so we can basically
+replace uboot with our own thing.  address 0x800000 seems to be where
+
+This is not how I normally run though, just an experiment and
+demonstration for putting your own program in flash to be run every
+time.  I normally do this
+
+sunxi# setenv bootcmd loads
+sunxi# saveenv
+
+Then it comes up and then says
+
+## Ready for S-Record download ...
+
+And I then download notmain.srec which is one of the binary formats
+my Makefile generates.  With minicom this is alt-a then s then up
+arrow to ascii, then enter to type in the file name or use the clunky
+minicom controls to navigate to the file.
+
+Then it says
+
+## First Load Addr = 0x42000000
+## Last  Load Addr = 0x42000443
+## Total Size      = 0x00000444 = 1092 Bytes
+## Start Addr      = 0x42000000
+
+with whatever your program size was and then you
+
+=> go 0x42000000
+## Starting application at 0x42000000 ...
+
+1 GND
+3 UART1-TX
+5 UART1-RX
+7 FEL
+
+Start with the uartXX examples then maybe blinker02 and wander around
+a bit after that.
