@@ -460,3 +460,54 @@ with whatever your program size was and then you
 
 Start with the uartXX examples then maybe blinker02 and wander around
 a bit after that.
+
+
+
+got a chip-pro.  used the chrome thing on one, very disturbing, dont
+like that idea at all.  It didnt work on the dev kit board, and wanted
+to re-learn this anyway, so 
+
+
+
+In the sunxi-tools directory
+
+curl -s http://opensource.nextthing.co/chip/images/stable/server/latest
+
+if it returns 149
+
+wget http://opensource.nextthing.co/chip/images/stable/server/149/sunxi-spl.bin
+wget http://opensource.nextthing.co/chip/images/stable/server/149/u-boot-dtb.bin
+wget http://opensource.nextthing.co/chip/images/stable/server/149/uboot-40000.bin
+wget http://opensource.nextthing.co/chip/images/stable/server/149/spl-40000-1000-100.bin
+
+create the text file ubootcmds.txt:
+
+help
+echo hello
+nand erase 0x0 0x100000000
+nand write.raw.noverify 0x43000000 0x0 0x000000c4
+nand write.raw.noverify 0x43000000 0x400000 0x000000c4
+nand write 0x4A000000 0x800000 0xC0000
+loads
+
+mkimage -A arm -T script -C none -d ubootcmds.txt ubootscr
+
+./sunxi-fel spl sunxi-spl.bin
+./sunxi-fel write 0x4a000000 u-boot-dtb.bin
+echo ./sunxi-fel write 0x4a000000 uboot-40000.bin
+./sunxi-fel write 0x43000000 spl-40000-1000-100.bin
+./sunxi-fel write 0x43100000 ubootscr
+./sunxi-fel exe 0x4A000000
+
+And because I did a saveenv at some point in my script I may have hosed
+my system, for now...
+
+
+./sunxi-fel spl sunxi-spl.bin
+./sunxi-fel write 0x4a000000 u-boot-dtb.bin
+./sunxi-fel write 0x4a000000 uboot-40000.bin
+./sunxi-fel write 0x43000000 spl-40000-1000-100.bin
+./sunxi-fel write 0x43100000 ubootscr
+./sunxi-fel exe 0x43000000
+
+
