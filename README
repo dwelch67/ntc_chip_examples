@@ -484,17 +484,20 @@ create the text file ubootcmds.txt:
 
 help
 echo hello
-nand erase 0x0 0x100000000
+nand erase 0x0 0x20000000
 nand write.raw.noverify 0x43000000 0x0 0x000000c4
 nand write.raw.noverify 0x43000000 0x400000 0x000000c4
 nand write 0x4A000000 0x800000 0xC0000
 loads
 
+
+mkimage -A arm -T script -C none -n "flash server" -d ubootcmds.txt ubootscr
+
 mkimage -A arm -T script -C none -d ubootcmds.txt ubootscr
 
 ./sunxi-fel spl sunxi-spl.bin
-./sunxi-fel write 0x4a000000 u-boot-dtb.bin
-echo ./sunxi-fel write 0x4a000000 uboot-40000.bin
+echo ./sunxi-fel write 0x4a000000 u-boot-dtb.bin
+./sunxi-fel write 0x4a000000 uboot-40000.bin
 ./sunxi-fel write 0x43000000 spl-40000-1000-100.bin
 ./sunxi-fel write 0x43100000 ubootscr
 ./sunxi-fel exe 0x4A000000
@@ -503,11 +506,28 @@ And because I did a saveenv at some point in my script I may have hosed
 my system, for now...
 
 
-./sunxi-fel spl sunxi-spl.bin
-./sunxi-fel write 0x4a000000 u-boot-dtb.bin
-./sunxi-fel write 0x4a000000 uboot-40000.bin
-./sunxi-fel write 0x43000000 spl-40000-1000-100.bin
-./sunxi-fel write 0x43100000 ubootscr
-./sunxi-fel exe 0x43000000
+Ahh, branches
 
+in CHIP-u-boot repo
+
+git checkout production-mlc
+
+then
+
+export CROSS_COMPILE=arm-linux-gnueabi-
+
+or whichever one you have
+
+make CHIP_defconfig
+make
+
+sunxi-fel spl u-boot-sunxi-with-spl.bin
+sunxi-fel write 0x4A000000 u-boot.bin
+sunxi-fel exe 0x4a000000
+
+And you can catch the u-boot prompt with any key then
+
+nand erase 0x0 0x20000000
+
+and start over...
 
